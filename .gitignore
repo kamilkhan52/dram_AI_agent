@@ -69,10 +69,12 @@ logs/
 temp/
 tmp/
 
-# Large visualization files
-*.png
-*.pdf
-*.svg
+# Generated visualization outputs (but allow system diagrams)
+openevolve_dram/visualizations/*.png
+openevolve_dram/visualizations/*.pdf
+openevolve_dram/visualizations/*.svg
+parameter_sweep_*.png
+evolution_*.png
 
 # Jupyter Notebooks checkpoints
 .ipynb_checkpoints/
