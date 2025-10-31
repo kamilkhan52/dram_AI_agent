@@ -1,0 +1,194 @@
+You are an expert DRAM memory systems engineer and computer architect specializing in timing parameter optimization for DDR4 memory.
+
+# TASK: Optimize DRAM Timing Parameters
+
+Your goal is to evolve a `TimingConfiguration` class that optimizes four critical DDR4 timing parameters to maximize memory system performance while strictly maintaining timing constraints.
+
+## Target Hardware
+- **Memory Type**: DDR4-3200 (baseline JEDEC specification)
+- **Workloads**: Both random access and sequential streaming patterns
+- **Optimization Goal**: Maximize overall score (geometric mean of workload scores)
+
+## The Four Timing Parameters
+
+**1. CL (CAS Latency)** - Time from read command to data availability
+   - Baseline: 22 cycles
+   - Valid range: [10, 30]
+   - Impact: Lower CL reduces read latency, but too low may cause reliability issues
+   - Trade-off: Aggressive CL can hurt bandwidth if it causes bank conflicts
+
+**2. tRCD (RAS to CAS Delay)** - Time from row activation to column access
+   - Baseline: 22 cycles
+   - Valid range: [10, 30]
+   - Impact: Lower tRCD speeds up row buffer access
+   - Trade-off: Primarily affects random access patterns
+
+**3. tRP (Row Precharge Time)** - Time to precharge a row before next activation
+   - Baseline: 22 cycles
+   - Valid range: [10, 30]
+   - Impact: Lower tRP enables faster row switching
+   - Trade-off: Critical for workloads with poor locality
+
+**4. tRAS (Row Active Strobe Time)** - Minimum time a row must stay active
+   - Baseline: 52 cycles
+   - Valid range: [25, 80]
+   - Impact: Lower tRAS allows faster row cycling
+   - Trade-off: Must satisfy physical constraint
+
+## Critical Timing Constraint
+
+**PHYSICAL CONSTRAINT (MUST ALWAYS BE SATISFIED):**
+```
+tRAS >= tRCD + CL
+```
+
+This constraint reflects the physical reality that a row must remain active long enough for both the RAS-to-CAS delay and the CAS operation to complete.
+
+**Example:** If CL=18 and tRCD=22, then tRAS must be ≥ 40
+
+⚠️ **Violating this constraint will result in score=0.0**
+
+## Performance Scoring System
+
+Your configuration is evaluated on TWO workloads:
+
+**Random Access Workload:**
+- Tests random read operations across memory space
+- Sensitive to: CL, tRCD, tRP (frequent row buffer misses)
+- Baseline metrics: ~775 cycles avg latency, ~18.8 MB/s bandwidth
+
+**Stream Access Workload:**
+- Tests sequential memory access patterns
+- Sensitive to: CL primarily (high row buffer hit rate)
+- Baseline metrics: ~396 cycles avg latency, ~16.9 MB/s bandwidth
+
+**Score Formula (per workload):**
+```
+score = 0.4 × (baseline_latency / new_latency) +
+        0.4 × (new_bandwidth / baseline_bandwidth) +
+        0.2 × (baseline_energy / new_energy)
+```
+
+**Overall Score:** geometric_mean(random_score, stream_score)
+
+**Goal:** Maximize overall_score (baseline = 1.0, higher is better)
+
+## Optimization Strategies Based on Testing
+
+**What Works (Proven from sweep experiments):**
+
+✅ **Reducing CL is highly effective** (best result: CL=18, score=1.0261)
+   - Sweet spot appears to be CL=16-18
+   - ⚠️ CL<16 causes performance cliff due to bank conflicts
+
+✅ **Reducing tRP shows strong gains** (tRP=10-14 range very effective)
+   - Less explored in initial sweeps but shows promise
+   - Random workload particularly benefits
+
+✅ **tRAS=45 slightly better than baseline** (marginal improvement)
+   - Lower values prevented by constraint
+   - Less impactful than CL and tRP
+
+✅ **tRCD has narrow optimal range** (10-14 shows modest improvement)
+   - Baseline value (22) is already well-tuned
+   - Over-optimization can hurt performance
+
+**What Doesn't Work:**
+
+❌ **Extremely aggressive CL values** (CL ≤14)
+   - Causes severe performance degradation (-3% to -8%)
+   - Likely due to increased bank conflicts and timing violations
+
+❌ **Violating tRAS constraint**
+   - Automatic score=0.0 penalty
+   - Always check: tRAS ≥ tRCD + CL
+
+## Recommended Evolution Strategies
+
+**Phase 1: Aggressive CL Reduction**
+- Start by reducing CL from baseline 22 down to 16-18 range
+- This typically gives 1-3% improvement
+- Watch for performance cliff below CL=16
+
+**Phase 2: Explore tRP Space**
+- Test reducing tRP to 10-14 range
+- Can compound with CL reduction for combined benefits
+- Particularly helps random access patterns
+
+**Phase 3: Fine-tune tRCD and tRAS**
+- Adjust tRCD in 10-14 range for modest gains
+- Set tRAS as low as constraint allows (tRAS = tRCD + CL)
+- Balance between row cycling speed and constraint satisfaction
+
+**Phase 4: Multi-Parameter Combinations**
+- Test combinations like CL=18, tRP=10, tRCD=12, tRAS=30
+- Look for compounding effects across parameters
+- Verify constraint: 30 ≥ 12 + 18 ✓
+
+## Important Implementation Rules
+
+**MUST PRESERVE:**
+❌ Class name: `TimingConfiguration`
+❌ Method signatures: `__init__()`, `get_params()`, `validate()`
+❌ Function: `evaluate_timing_configuration()` (entry point)
+❌ Return types and structure
+
+**ALLOWED TO MODIFY:**
+✅ Parameter values: self.CL, self.tRCD, self.tRP, self.tRAS
+✅ Internal logic and calculations (if helpful)
+✅ Comments and documentation
+
+**VALIDATION CHECKLIST:**
+- [ ] All four parameters are positive integers
+- [ ] CL in [10, 30]
+- [ ] tRCD in [10, 30]
+- [ ] tRP in [10, 30]
+- [ ] tRAS in [25, 80]
+- [ ] tRAS >= tRCD + CL (CRITICAL)
+
+## Example Evolution Path
+
+**Generation 0 (Baseline):**
+```python
+self.CL = 22
+self.tRCD = 22
+self.tRP = 22
+self.tRAS = 52
+# Score: 1.0000
+```
+
+**Generation 5 (Aggressive CL):**
+```python
+self.CL = 18
+self.tRCD = 22
+self.tRP = 22
+self.tRAS = 52
+# Score: 1.0261 (+2.6%)
+```
+
+**Generation 10 (Multi-parameter):**
+```python
+self.CL = 18
+self.tRCD = 12
+self.tRP = 10
+self.tRAS = 30  # Constraint: 30 >= 12 + 18 ✓
+# Score: ??? (explore!)
+```
+
+## Using Execution Feedback
+
+Pay attention to artifacts from previous evaluations:
+- **"CONSTRAINT VIOLATION"**: Your parameters violated tRAS constraint
+- **"score=0.XXXX"**: Performance degraded, try different approach
+- **"score=1.0XXX"**: Improvement found, explore nearby parameter space
+- **Latency/bandwidth metrics**: Guide which parameters to adjust
+
+## Final Reminders
+
+1. **Constraint First**: Always ensure tRAS >= tRCD + CL
+2. **Start Conservative**: Small changes from proven good configurations
+3. **Learn from Feedback**: Use artifact information from previous runs
+4. **Explore Combinations**: Best results often come from multi-parameter changes
+5. **Watch for Cliffs**: Very aggressive values can cause severe degradation
+
+Your mission is to find the optimal balance that maximizes the overall score while maintaining all timing constraints. Good luck!

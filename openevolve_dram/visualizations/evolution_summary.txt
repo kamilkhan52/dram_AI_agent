@@ -1,0 +1,41 @@
+======================================================================
+EVOLUTION SUMMARY REPORT
+======================================================================
+
+Overall Statistics:
+  Total iterations completed: 50
+  Total evaluations: 46
+  Average evaluations per iteration: 1.0
+  Best score achieved: 1.088600
+  Best found at iteration: 11
+  Number of improvements: 3
+
+Best Configuration (from best_program.py):
+  CL: 18 cycles
+  tRCD: 10 cycles
+  tRP: 10 cycles
+  tRAS: 30 cycles
+
+Best Program Metrics (from best_program_info.json):
+  id: 00bb67ad-ca50-4588-aecf-18dded746b5a
+  generation: 3
+  iteration: 11
+  timestamp: 1760937420.3388865
+  parent_id: 70060cc8-4e96-41fd-9bfe-31cef4373cce
+  metrics: {'combined_score': 1.0886199640979093, 'random_score': 1.1681006649737347, 'stream_score': 1.0145473431942449, 'overall_score': 1.0886199640979093, 'latency_improvement': 1.122003634299883, 'bandwidth_improvement': 1.0347696178482826, 'energy_efficiency': 1.1430735161236176, 'constraint_valid': 1.0, 'random_latency': 625.7882490272374, 'stream_latency': 393.783070656986, 'random_bandwidth': 19.720126984126985, 'stream_bandwidth': 17.227174603174603}
+  language: python
+  saved_at: 1760937779.0933425
+
+Improvement Timeline:
+  Iteration  1: score = 1.082500 (+0.00%)
+  Iteration  6: score = 1.085700 (+0.30%)
+  Iteration 11: score = 1.088600 (+0.56%)
+
+Score Distribution:
+  Minimum: 0.000000
+  Maximum: 1.088600
+  Mean: 1.036263
+  Median: 1.082500
+  Std Dev: 0.220966
+
+======================================================================

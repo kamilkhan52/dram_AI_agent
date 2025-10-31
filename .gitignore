@@ -1,0 +1,78 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+.env
+.venv
+conda-meta/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# API Keys and Secrets - CRITICAL
+*.key
+*.pem
+.env.local
+secrets.yaml
+secrets.json
+api_keys.txt
+
+# DRAMsim3 output directories - can be large
+eval_outputs/
+test_outputs/
+openevolve_dram/openevolve_output/
+sweep_results/*.txt
+sweep_results/eval_*/
+sweep_results/baseline_*/
+
+# Keep config files but not results
+sweep_results.json
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+temp/
+tmp/
+
+# Large visualization files
+*.png
+*.pdf
+*.svg
+
+# Jupyter Notebooks checkpoints
+.ipynb_checkpoints/

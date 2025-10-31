@@ -1,0 +1,114 @@
+# OpenEvolve Configuration for DRAM Timing Optimization
+# Based on ADRS (Automated Design via Repeated Sampling) methodology
+
+# Evolution parameters
+max_iterations: 80
+random_seed: 42  # For reproducibility
+
+# LLM Configuration
+llm:
+  # Use Google Gemini (free tier available)
+  # Get API key from: https://aistudio.google.com/apikey
+  # Set: export OPENAI_API_KEY="your-gemini-api-key"
+  api_base: "https://generativelanguage.googleapis.com/v1beta/openai/"
+  
+  # Model ensemble for robust evolution
+  models:
+    - name: "gemini-2.0-flash-exp"
+      weight: 0.7  # Fast, creative exploration
+    - name: "gemini-2.0-flash-thinking-exp"
+      weight: 0.3  # Deeper reasoning for complex optimizations
+  
+  temperature: 0.8  # Higher temperature for creative exploration
+  max_tokens: 4096
+
+# Database configuration (MAP-Elites quality-diversity algorithm)
+database:
+  population_size: 50  # Smaller population for faster iteration
+  num_islands: 3       # 3 islands for diversity without excessive overhead
+  migration_interval: 10  # Exchange best solutions every 10 generations
+  
+  # Feature dimensions for MAP-Elites grid
+  # These create a quality-diversity archive where programs are organized
+  # by multiple characteristics, preventing premature convergence
+  feature_dimensions:
+    - "latency_improvement"      # How much latency improved
+    - "bandwidth_improvement"    # How much bandwidth improved
+    - "energy_efficiency"        # Energy efficiency gains
+  
+  # Number of bins for each feature dimension
+  feature_bins:
+    latency_improvement: 10
+    bandwidth_improvement: 10
+    energy_efficiency: 10
+
+# Evaluator configuration
+evaluator:
+  enable_artifacts: true       # Provide execution feedback to LLM
+  cascade_evaluation: false    # No cascade needed (single evaluation)
+  use_llm_feedback: false      # Focus on quantitative metrics
+  timeout: 300                 # 5 minute timeout per evaluation
+
+# Prompt configuration
+prompt:
+  # System message defines the optimization task
+  # (Full prompt from system_prompt.txt - see that file for details)
+  system_message: |
+    You are an expert DRAM memory systems engineer specializing in DDR4 timing optimization.
+    
+    TASK: Optimize TimingConfiguration class with 4 parameters (CL, tRCD, tRP, tRAS) to maximize performance.
+    
+    CRITICAL CONSTRAINT: tRAS >= tRCD + CL (violating this gives score=0.0)
+    
+    PARAMETER RANGES:
+    - CL: [10,30], baseline=22. Lower is better BUT CL<16 causes performance cliff (-8%)
+    - tRCD: [10,30], baseline=22. Optimal around 10-14
+    - tRP: [10,30], baseline=22. Strong gains at 10-14 range
+    - tRAS: [25,80], baseline=52. Set as low as constraint allows
+    
+    PROVEN STRATEGIES (from manual sweeps):
+    ✅ CL=18: +2.6% improvement (sweet spot)
+    ✅ tRP=10: +2.3% improvement  
+    ✅ Multi-parameter combinations unexplored (potential for >3% gains)
+    ❌ CL≤14: Severe degradation
+    
+    SCORING: geometric_mean(random_score, stream_score)
+    - Random workload: sensitive to all parameters
+    - Stream workload: primarily CL-sensitive
+    
+    EVOLUTION STRATEGY:
+    1. Start with CL=16-18 (proven range)
+    2. Combine with tRP=10-14
+    3. Fine-tune tRCD, tRAS
+    4. Verify constraint at each step
+    
+    MUST PRESERVE: Class name, method signatures (__init__, get_params, validate), evaluate_timing_configuration()
+    CAN MODIFY: Parameter values only
+  
+  # Inspiration sources for next generation
+  num_top_programs: 3          # Include 3 best performers
+  num_diverse_programs: 2      # Include 2 diverse solutions
+  include_artifacts: true      # Show previous execution results
+  
+  # Template stochasticity for diverse prompts
+  use_template_stochasticity: true
+  template_variations:
+    greeting:
+      - "Let's optimize this DRAM timing configuration:"
+      - "Time to improve these timing parameters:"
+      - "Evolving DRAM timings for better performance:"
+    improvement_focus:
+      - "Focus on maintaining correctness while improving performance."
+      - "Consider the tradeoffs between latency, bandwidth, and energy."
+      - "Explore aggressive timing values while respecting constraints."
+
+# Output configuration
+output:
+  save_interval: 10           # Save checkpoint every 10 iterations
+  visualize: true             # Enable visualization data collection
+  log_level: "INFO"           # INFO, DEBUG, WARNING, ERROR
+
+# Cost estimation (for planning)
+# Gemini 2.0 Flash: ~$0.01-0.05 per iteration
+# Expected total cost for 80 iterations: $1-4
+# Expected runtime: 1-2 hours (depending on network latency)
